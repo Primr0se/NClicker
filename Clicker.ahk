@@ -331,13 +331,16 @@ class Clicker {
 	
 	QTExec(prm*) {
 		if this.FindImage({area:"825|440|115|115", name:"nothing"})
-		or this.FindImage2("tanglinh", false) 
+		;~ or this.FindImage2("tanglinh", false) 
 			this.SequencesClick(Mouses)
-		;~ else if this.FindImage2("tanglinh", false) 
-		;~ {
-			;~ this.DoClick({x:888, y:369})
-			;~ Sleep 250
-		;~ } 
+		else if this.FindImage2("tanglinh") 
+		{
+			loop, 5
+			{
+				Sleep 200
+				this.DoClick({x:396, y:267})
+			}
+		} 
 		else if this.FindImage({area:"825|440|115|115", name:"skill"})
 		{
 			OutputDebug % "skill found!!"
