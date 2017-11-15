@@ -21,7 +21,7 @@ active:=0, gdipToken := Gdip_Startup(), clicker := new Clicker()
 
 ;~ super global var
 global Bitmaps:={}
-global GameHWND, HostHWND, OffsetX:=6, OffsetY:=-53, MouseOffset:=54, EnableSH
+global GameHWND, HostHWND, OffsetX:=6, OffsetY:=-65, MouseOffset:=42, EnableSH
 global timer:=Object, Mouses, Images, CurMouse
 global FarmDQT:=false
 global Maps, GoPrev:=false, CurMap:=0
@@ -68,14 +68,14 @@ SetUpGameHWND() {
 	loop % all
 	{
 		GameHWND.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 690
+		WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
 	}
 	WinGet, all, List, S4
 	OutputDebug % "found " all " S4!"
 	loop % all
 	{
 		GameHWND.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 690
+		WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
 	}
 	
 	if( GameHWND.length() = 1) {
@@ -549,21 +549,31 @@ class Clicker {
 					}
 				}
 			}
-			if(joined = GameHWND.length()) ;~ ok all in >> start
+			if(joined = GameHWND.length() && this.FindImage2("khaichien", false)) ;~ ok all in >> start
 				VKTState++
 		} else if(VKTState=2) {
-			if (IsVKT)
-			{
+			;~ if (IsVKT)
+			;~ {
 				;~ Sleep 250
-				if(!(this.FindImage({area:"680|345|73|23", name:"inteam"})
-				  || this.FindImage({area:"725|373|73|23", name:"inteam"}))) { ;~ ok go
-					VKTState++
-					VKTLastJoin:=0
-				} else {
-					this.DoClick({x:810, y:541})
-				}
-			}
-			else if this.FindImage({area:"629|594|178|38", name:"khaichien", pnt:{x:765, y:513}})
+				;~ if(!(this.FindImage({area:"680|345|73|23", name:"inteam"})
+				  ;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}))) { ;~ ok go
+					;~ VKTState++
+					;~ VKTLastJoin:=0
+				;~ } else {
+					;~ this.DoClick({x:810, y:541})
+				;~ }
+			;~ }
+			;~ else if this.FindImage({area:"629|594|178|38", name:"khaichien", pnt:{x:765, y:513}})
+			;~ {
+				;~ VKTState++
+				;~ VKTLastJoin:=0
+			;~ }
+			if this.FindImage2("khaichien")
+			{
+				OutputDebug % "click khai chien!"
+				return
+			}	
+			else if this.FindImage2("thoat", false) or this.FindImage2("ketqua", false)
 			{
 				VKTState++
 				VKTLastJoin:=0
@@ -575,7 +585,7 @@ class Clicker {
 				} else if(this.FindImage({area:"469|626|70|25", name:"tcvkt"})) {
 					this.DoClick({x:504, y:533})
 				} else if(this.FindImage({area:"738|632|67|21", name:"ldvkt"})) {
-					this.DoClick({x:775, y:538})
+					this.DoClick({x:741, y:540})
 					;~ ok, wait for team up
 					VKTState++
 					this.MemberClick({x:257, y:381}) ;~ go in
