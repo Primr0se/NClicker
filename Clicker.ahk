@@ -21,13 +21,13 @@ active:=0, gdipToken := Gdip_Startup(), clicker := new Clicker()
 
 ;~ super global var
 global Bitmaps:={}
-global GameHWND, HostHWND, OffsetX:=6, OffsetY:=-65, MouseOffset:=42, EnableSH
+global GameHWND, HostHWND, OffsetX:=6, OffsetY:=-65, MouseOffset:=40, EnableSH
 global timer:=Object, Mouses, Images, CurMouse
 global FarmDQT:=false
 global Maps, GoPrev:=false, CurMap:=0
 global Searches, VKTState:=-1, VKTLastJoin:=0, VKTLastMem:=0, IsVKT:=false
 global NDSteps, NDCurStep, NDLastMove
-global TTLState:=0
+global TTLState:=0, DucTBState:=0
 ;~ global DbgCnt:=0,AtkCnt:=0
 ;~ init var & const
 Mouses:=[]
@@ -39,11 +39,12 @@ SetUpVKT()
 SetUpNgaoDu()
 
 Suspend, On
-Hotkey, IfWinActive, % "ahk_id " HostHWND
+Hotkey, IfWinActive, S4
 Hotkey, F1, l_ToggleKeys
 Hotkey, Esc, l_StopExec
 Hotkey, ^LButton, l_SetWinOrPos
 Hotkey, Space, l_SimClick
+;~ Hotkey, LButton, l_SimClick
 loop 5
 	Hotkey % A_Index, Label_%A_Index%
 return
@@ -68,14 +69,14 @@ SetUpGameHWND() {
 	loop % all
 	{
 		GameHWND.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
 	}
 	WinGet, all, List, S4
 	OutputDebug % "found " all " S4!"
 	loop % all
 	{
 		GameHWND.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
 	}
 	
 	if( GameHWND.length() = 1) {
@@ -113,18 +114,25 @@ SetUpMap() {
 	Maps.Push({name:"chunghoi", pnt:[{x:798, y:480}]})
 	Maps.Push({name:"duongco", pnt:[{x:813, y:301}]})
 	Maps.Push({name:"vudoc", pnt:[{x:815, y:211}]})
+	;~ Maps.Push({name:"vudoc", pnt:[{x:378, y:176}]})
 	Maps.Push({name:"lubo2", pnt:[{x:768, y:247}]})
-	Maps.Push({name:"lubo1", pnt:[{x:643, y:205}]})
+	Maps.Push({name:"lubo1", pnt:[{x:604, y:209}]})
+	;~ Maps.Push({name:"lubo1", pnt:[{x:491, y:413}]})
 	Maps.Push({name:"mocthu", pnt:[{x:789, y:212}]})
 	Maps.Push({name:"thachtran", pnt:[{x:836, y:275}]})
+	;~ Maps.Push({name:"thachtran", pnt:[{x:744, y:476}]})
 	Maps.Push({name:"dinhnguyen", pnt:[{x:775, y:186}]})
 	Maps.Push({name:"hatien", pnt:[{x:665, y:117}]})
+	;~ Maps.Push({name:"hatien", pnt:[{x:524, y:352}]})
 	Maps.Push({name:"tmy2", pnt:[{x:750, y:174}]})
 	Maps.Push({name:"tmy1", pnt:[{x:726, y:165}]})
+	;~ Maps.Push({name:"tmy1", pnt:[{x:230, y:318}]})
 	Maps.Push({name:"nbd", pnt:[{x:583, y:256}]})
 	Maps.Push({name:"dongtrac", pnt:[{x:522, y:160}]})
+	;~ Maps.Push({name:"dongtrac", pnt:[{x:743, y:234}]})
 	Maps.Push({name:"thiencong", pnt:[{x:908, y:312}]})
 	Maps.Push({name:"diacong", pnt:[{x:596, y:230}]})
+	;~ Maps.Push({name:"diacong", pnt:[{x:757, y:362}]})
 	Maps.Push({name:"tatu", pnt:[{x:372, y:182}]})
 	Maps.Push({name:"biencuong2", pnt:[{x:936, y:315}]})
 	Maps.Push({name:"biencuong1", pnt:[{x:905, y:441}]})
@@ -190,6 +198,7 @@ l_ToggleKeys:
 		Hotkey, Esc, On
 		Hotkey, ^LButton, On
 		Hotkey, Space, On
+		;~ Hotkey, LButton, On
 		loop 5
 			Hotkey % A_Index , On
 		Menu, Tray, Icon, IconReady.ico
@@ -197,6 +206,7 @@ l_ToggleKeys:
 		Hotkey, Esc, Off
 		Hotkey, ^LButton, Off
 		Hotkey, Space, Off
+		;~ Hotkey, LButton, Off
 		loop 5
 			Hotkey % A_Index , Off
 		clicker.Stop()
@@ -216,13 +226,15 @@ Label_3:
 	return
 Label_4:
 	;~ clicker.Start("FnExec", 350, Images)
-	;~ clicker.Start("TimTriKy", 550)
+	;~ clicker.Start("TimTriKy", 250)
 	;~ clicker.Start("ThamBao", 250)
 	clicker.Start("QTExec", 550)
+	;~ clicker.Start("DucTB", 550)
 	return
 Label_5:
+	clicker.Start("TimTriKy", 350)
 	;~ clicker.Start("NgaoDu", 550)
-	clicker.Start("ThapTL", 550)
+	;~ clicker.Start("ThapTL", 550)
 	return
 l_StopExec:
 	if EnableSH
@@ -230,6 +242,7 @@ l_StopExec:
 	clicker.Stop()
 	return
 l_SimClick:
+	;~ MouseGetPos, x, y
 	clicker.SequencesClick(Mouses)
 	return
 l_SetWinOrPos:
@@ -269,7 +282,7 @@ class Clicker {
 	
 	FnExec(ImgSeq, MouseSeq) {
 		if(!ImgSeq) {
-			this.SequencesClick(MouseSeq, true)
+			this.SequencesClick(MouseSeq, false)
 		}
 		
 		if this.FindImage2("skip")
@@ -330,66 +343,130 @@ class Clicker {
 	}
 	
 	QTExec(prm*) {
-		if this.FindImage({area:"825|440|115|115", name:"nothing"})
-		;~ or this.FindImage2("tanglinh", false) 
-			this.SequencesClick(Mouses)
-		else if this.FindImage2("tanglinh") 
+		
+		if this.FindImage({area:"825|440|115|115", name:"skill"})
+			return
+		
+		if this.FindImage2("tanglinh") 
 		{
 			loop, 5
 			{
 				Sleep 200
 				this.DoClick({x:396, y:267})
 			}
+			return
 		} 
-		else if this.FindImage({area:"825|440|115|115", name:"skill"})
-		{
-			OutputDebug % "skill found!!"
+		
+		if this.FindImage({area:"825|440|115|115", name:"nothing"})
+		;~ or this.FindImage2("tanglinh", false) 
+			this.SequencesClick(Mouses)
+		;~ else if this.FindImage2("tanglinh") 
+		;~ {
+			;~ loop, 5
+			;~ {
+				;~ Sleep 200
+				;~ this.DoClick({x:396, y:267})
+			;~ }
+		;~ } 
+		;~ else if this.FindImage({area:"825|440|115|115", name:"skill"})
+		;~ {
+			;~ OutputDebug % "skill found!!"
 			;~ this.DoClick({x:924, y:383})
-		}
+		;~ }
 		;~ if this.FindImage2("tinhtu")
 			;~ return
 		;~ this.SequencesClick(Mouses)
 	}
+	DucTB( param* )
+	{
+		static count:=0
+		if this.FindImage2("ducthatbai", false)
+		or this.FindImage2("kodubac", false)
+		{
+			if this.FindImage2("tab_kho")
+			{
+				DucTBState:=1
+				return
+			}
+		}
+		if DucTBState=1
+		{
+			if this.FindImage2("silverchest")
+				if this.FindImage2("moruong")
+					return
+			;~ if this.FindImage2("nhanhover")
+			if this.FindImage2("nhan")	
+			{
+				count++, DucTBState:=2
+				FileAppend % "Open chest at " A_Hour ":" A_Min ":" A_Sec ", total: " count " times`n", Statistic.txt
+				return
+			}
+		}
+		if DucTBState=2
+		{
+			if this.FindImage2("tab_cuonghoa")
+				return
+			else
+				OutputDebug % "not find tab_cuonghoa"
+			if this.FindImage2("duc")
+			{
+				DucTBState:=0
+				return
+			}
+		}
+		if DucTBState=0
+		{
+			this.DoClick({x:584, y:465})
+		}
+	}
+	
 	TimTriKy(prm*) {
 		if this.FindImage2("noichuyen") 
 		or this.FindImage2("caotu") 
 		;~ cam
-		or this.FindImage2("baotamnuong") 
-		or this.FindImage2("chan_chanco") 
-		or this.FindImage2("chan_tvc") 
-		or this.FindImage2("chan_vuongnguyenco") 
-		or this.FindImage2("chanco") 
-		or this.FindImage2("chucdung") 
-		or this.FindImage2("daikieu") 
-		or this.FindImage2("dieuthuyen") 
-		or this.FindImage2("giacatqua") 
-		or this.FindImage2("hoangnguyetanh") 
-		or this.FindImage2("lulinhkhoi") 
-		or this.FindImage2("mavanloc") 
-		or this.FindImage2("phankimlien") 
-		or this.FindImage2("quannganbinh") 
-		or this.FindImage2("tanhienanh") 
-		or this.FindImage2("thaivanco") 
-		or this.FindImage2("tieukieu") 
-		or this.FindImage2("tonthuonghuong") 
-		or this.FindImage2("trauthi") 
-		or this.FindImage2("truongoanhoanh") 
-		or this.FindImage2("vuongnguyenco") 
+		;~ or this.FindImage2("baotamnuong") 
+		;~ or this.FindImage2("chan_chanco") 
+		;~ or this.FindImage2("chan_tvc") 
+		;~ or this.FindImage2("chan_vuongnguyenco") 
+		;~ or this.FindImage2("chanco") 
+		;~ or this.FindImage2("chucdung") 
+		;~ or this.FindImage2("daikieu") 
+		;~ or this.FindImage2("dieuthuyen") 
+		;~ or this.FindImage2("giacatqua") 
+		;~ or this.FindImage2("hoangnguyetanh") 
+		;~ or this.FindImage2("lulinhkhoi") 
+		;~ or this.FindImage2("mavanloc") 
+		;~ or this.FindImage2("phankimlien") 
+		;~ or this.FindImage2("quannganbinh") 
+		;~ or this.FindImage2("tanhienanh") 
+		;~ or this.FindImage2("thaivanco") 
+		;~ or this.FindImage2("tieukieu") 
+		;~ or this.FindImage2("tonthuonghuong") 
+		;~ or this.FindImage2("trauthi") 
+		;~ or this.FindImage2("truongoanhoanh") 
+		;~ or this.FindImage2("vuongnguyenco") 
 		;~ tim
-		or this.FindImage2("camthi") 
-		or this.FindImage2("hahauthi") 
-		or this.FindImage2("mithi") 
-		or this.FindImage2("ngothi") 
-		or this.FindImage2("phanthi") 
-		or this.FindImage2("taohoa") 
-		or this.FindImage2("taotien") 
-		or this.FindImage2("thaithi") 
-		or this.FindImage2("tonloduc") 
-		or this.FindImage2("tonthi") 
-		or this.FindImage2("truongxuanhoa") 
+		;~ or this.FindImage2("camthi") 
+		;~ or this.FindImage2("hahauthi") 
+		;~ or this.FindImage2("mithi") 
+		;~ or this.FindImage2("ngothi") 
+		;~ or this.FindImage2("phanthi") 
+		;~ or this.FindImage2("taohoa") 
+		;~ or this.FindImage2("taotien") 
+		;~ or this.FindImage2("thaithi") 
+		;~ or this.FindImage2("tonloduc") 
+		;~ or this.FindImage2("tonthi") 
+		;~ or this.FindImage2("truongxuanhoa") 
 		;~ danh pham
 		or this.FindImage2("thuongnhan") 
 		or this.FindImage2("phuthuong") 
+		;~ farm VH
+		or this.FindImage2("cap6") 
+		or this.FindImage2("cap5") 
+		or this.FindImage2("cap4") 
+		or this.FindImage2("6caphover") 
+		or this.FindImage2("5caphover") 
+		or this.FindImage2("4caphover") 
 			return
 		;~ find
 		;~ or this.FindImage2("timvang") 
@@ -457,7 +534,7 @@ class Clicker {
 				else if CurMap = 3 ;~ ma nguc
 					this.DoClick({x:623, y:148})
 				else	
-					this.DoClick({x:420, y:621}) 
+					this.DoClick({x:427, y:624}) 
 				CurMap:=0
 			} else {
 				this.Stop()
@@ -500,8 +577,8 @@ class Clicker {
 				if(diff > 2750) { 
 					VKTLastMem++
 					if(VKTLastMem > GameHWND.length())
-						VKTLastMem := 1
-					x:=257+(VKTLastMem-1)*76, y:=381+(VKTLastMem-1)*54
+						VKTLastMem := 0
+					x:=257+(VKTLastMem)*76, y:=381+(VKTLastMem)*54
 					this.DoClick({x:x, y:y}, GameHWND[VKTLastMem]) ;~ join lane
 					this.DoClick({x:467, y:387},  GameHWND[VKTLastMem]) ;~ accept buy
 					VKTLastJoin := A_TickCount
@@ -549,31 +626,21 @@ class Clicker {
 					}
 				}
 			}
-			if(joined = GameHWND.length() && this.FindImage2("khaichien", false)) ;~ ok all in >> start
+			if(joined = GameHWND.length()) ;~ ok all in >> start
 				VKTState++
 		} else if(VKTState=2) {
-			;~ if (IsVKT)
-			;~ {
-				;~ Sleep 250
-				;~ if(!(this.FindImage({area:"680|345|73|23", name:"inteam"})
-				  ;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}))) { ;~ ok go
-					;~ VKTState++
-					;~ VKTLastJoin:=0
-				;~ } else {
-					;~ this.DoClick({x:810, y:541})
-				;~ }
-			;~ }
-			;~ else if this.FindImage({area:"629|594|178|38", name:"khaichien", pnt:{x:765, y:513}})
-			;~ {
-				;~ VKTState++
-				;~ VKTLastJoin:=0
-			;~ }
-			if this.FindImage2("khaichien")
+			if (IsVKT)
 			{
-				OutputDebug % "click khai chien!"
-				return
-			}	
-			else if this.FindImage2("thoat", false) or this.FindImage2("ketqua", false)
+				;~ Sleep 250
+				if(!(this.FindImage({area:"680|345|73|23", name:"inteam"})
+				  || this.FindImage({area:"725|373|73|23", name:"inteam"}))) { ;~ ok go
+					VKTState++
+					VKTLastJoin:=0
+				} else {
+					this.DoClick({x:810, y:541})
+				}
+			}
+			else if this.FindImage({area:"629|594|178|38", name:"khaichien", pnt:{x:765, y:513}})
 			{
 				VKTState++
 				VKTLastJoin:=0
@@ -585,7 +652,7 @@ class Clicker {
 				} else if(this.FindImage({area:"469|626|70|25", name:"tcvkt"})) {
 					this.DoClick({x:504, y:533})
 				} else if(this.FindImage({area:"738|632|67|21", name:"ldvkt"})) {
-					this.DoClick({x:741, y:540})
+					this.DoClick({x:775, y:538})
 					;~ ok, wait for team up
 					VKTState++
 					this.MemberClick({x:257, y:381}) ;~ go in
@@ -636,6 +703,7 @@ class Clicker {
 		loop % Seq.length()
 		{
 			this.DoClick(Seq[A_Index])
+			;~ this.MemberClick(Seq[A_Index])
 		}
 	}
 	
@@ -674,10 +742,10 @@ class Clicker {
 		x:=s1+OffsetX, y:=s2+OffsetY, w:=s3, h:=s4
 		bmpArea := GDIP_BitmapFromScreen("hwnd:" win "|" x "|" y "|" w "|" h) 
 		name:=screen.name
-		if name="okdoi"
+		;~ if name="okdoi"
 		{
-			Gdip_SaveBitmapToFile(bmpArea, "screen2.png", 100)
-			Gdip_SaveBitmapToFile(Bitmaps[name], name "2.png", 100)
+			;~ Gdip_SaveBitmapToFile(bmpArea, "screen.png", 100)
+			;~ Gdip_SaveBitmapToFile(Bitmaps[name], name "1.png", 100)
 		}
 		res := Gdip_ImageSearch(bmpArea, Bitmaps[screen.name])
 		if res > 0 
@@ -693,8 +761,8 @@ class Clicker {
 		if !win
 			win:=HostHWND
 		;~ x:=0, y:=85, w:=700, h:=600
-		bmpArea := GDIP_BitmapFromScreen("hwnd:" win "|0|85|1010|600") 
-		Gdip_SaveBitmapToFile(bmpArea, "screen2.png", 100)
+		bmpArea := GDIP_BitmapFromScreen("hwnd:" win "|0|73|1010|600") 
+		;~ Gdip_SaveBitmapToFile(bmpArea, "screen2.png", 100)
 		;~ Gdip_SaveBitmapToFile(Bitmaps[name], name "2.png", 100)
 		;~ bmpFind := Gdip_CreateBitmapFromFile("res\" screen.name ".png")
 		;~ res := Gdip_ImageSearch(bmpArea, bmpFind)
@@ -722,7 +790,7 @@ class Clicker {
 		{
 			name:=Maps[A_Index].name
 			if(this.FindImage({area:"440|705|120|22", name:name})) {
-				if (name = "gcd2" or name = "hhuy") {
+				if (name = "gcd2" or name = "hhuy" or name = "duongco") {
 					GoPrev:=true
 					return false
 				}
