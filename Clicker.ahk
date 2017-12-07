@@ -20,21 +20,22 @@ Menu, Tray, NoStandard
 active:=0, gdipToken := Gdip_Startup(), clicker := new Clicker()
 
 global OffsetX:=6, OffsetY:=-65, MouseOffset:=40
-global Started := 0, RestartSub := 0
+global ResetState := 0, ResetSubstate := 0
 ;~ super global var
 global Bitmaps, Images, Mouses, Maps, Searches, NDSteps, Main, Subs
 global timer:=Object, IsTB:=false, IsVKT:=false
 
+SetUpGameHWND()
 ;~ init var & const
 LoadBitmaps()
 SetUpMap()
 SetUpImage()
-SetUpGameHWND()
 SetUpVKT()
 SetUpNgaoDu()
 
 Suspend, On
-Hotkey, IfWinActive, S4
+;~ Hotkey, If, % WinActive("S2") or WinActive("S4")
+Hotkey, IfWinActive, ahk_class MozillaWindowClass
 Hotkey, F1, l_ToggleKeys
 Hotkey, Esc, l_StopExec
 Hotkey, ^LButton, l_SetWinOrPos
@@ -43,7 +44,6 @@ Hotkey, ^LButton, l_SetWinOrPos
 loop 5
 	Hotkey % A_Index, Label_%A_Index%
 return
-
 
 l_ToggleKeys:
 	suspend
@@ -82,10 +82,10 @@ Label_4:
 ;~	clicker.Start("QTExec", 550)
 	return
 Label_5:
-	;~ clicker.Start("TimTriKy", 350)
-	clicker.Start("DucTB", 550)
+	clicker.Start("TimTriKy", 750)
 	;~ clicker.Start("NgaoDu", 550)
 	;~ clicker.Start("ThapTL", 550)
+	;~ clicker.Start("DucTB", 550)
 	return
 l_StopExec:
 	if EnableSH
@@ -99,7 +99,7 @@ l_SimClick:
 l_MultiClick:
 	MouseGetPos, x, y
 	y-=MouseOffset
-	OutputDebug % "" x "," y
+	;~ OutputDebug % "" x "," y
 	clicker.MemberClick({x:x, y:y})
 	clicker.DoClick({x:x, y:y})
 	return
@@ -140,15 +140,15 @@ class Clicker {
 	
 	FnExec(ImgSeq, MouseSeq) {
 		static index:=1
-		if RestartSub
+		if ResetSubstate
 		{
-			RestartSub:=0, index:=1
+			ResetSubstate:=0, index:=1
 		}
 		if this.FindImage2("skip")
 			return
 		
 		if(!ImgSeq) {
-			this.SequencesClick(MouseSeq, true)
+			this.SequencesClick(MouseSeq)
 		}
 		clicked := false
 		if this.FindImage({area:"89|288|856|420", name:"nhanx2", pnt:{x:695, y:440}})
@@ -159,11 +159,12 @@ class Clicker {
 		else if(this.FindImage({area:"89|288|856|420", name:"exchange"}))
 		{
 			;~ OutputDebug % "" index
-			if index = 2 ;~ tran chau
+			if index = 2 ;~ dont buy tc
 			{
 				index++
 				return
 			}
+			
 			x:=252+index*80, y:=450
 			this.DoClick({x:x, y:y}) ;~ select
 			this.DoClick({x:685, y:542}) ;~ exchange
@@ -185,9 +186,8 @@ class Clicker {
 			and !this.FindImage({area:"540|308|115|180", name:"attack"}) 
 			and !this.FindImage({area:"540|308|115|180", name:"tiencong"})
 			and !IsTB
-				return ;~ bad connection
+				return 0 ;~ bad connection
 				;~ OutputDebug % "bad connection!!"
-				
 			for s in ImgSeq 
 			{
 				clicked := this.FindImage(ImgSeq[s])
@@ -207,13 +207,13 @@ class Clicker {
 			
 		if( MouseSeq && index > MouseSeq.length()) {
 			;~ OutputDebug % "FnExec Delta: " (A_TickCount-dt)
-			return true
+			return 1
 		}
 
 		if(!clicked && MouseSeq) {
 			this.DoClick(MouseSeq[index])
 		}
-		return false
+		return 0
 		;~ OutputDebug % "FnExec Delta: " (A_TickCount-dt)
 	}
 	
@@ -223,7 +223,7 @@ class Clicker {
 			SetTimer % timer, Delete
 		Mouses:=[]
 		Menu, Tray, Icon, IconReady.ico
-		Started := 0
+		ResetState := 0
 	}
 	Start(FnName, period:=175, ImgSeq:=0, MouseSeq:=0) {
 		if(timer)
@@ -234,7 +234,7 @@ class Clicker {
 		IsTB:=(this.FindImage({area:"89|288|856|420", name:"canquet"}))
 		;~ MsgBox % "ThamBao dectect? " IsTB
 		Menu, Tray, Icon, IconExecuting.ico
-		Started := 1, RestartSub := 1
+		ResetState := 1, ResetSubstate := 1
 	}
 	
 	QTExec(prm*) {
@@ -275,9 +275,9 @@ class Clicker {
 	DucTB( param* )
 	{
 		static state:=0, count:=0
-		if Started ;~ reset state once before run
+		if ResetState ;~ reset state once before run
 		{
-			Started := 0, state:=0
+			ResetState := 0, state:=0
 		}
 		if this.FindImage2("ducthatbai", false)
 		or this.FindImage2("kodubac", false)
@@ -305,8 +305,8 @@ class Clicker {
 		{
 			if this.FindImage2("tab_cuonghoa")
 				return
-			else
-				OutputDebug % "not find tab_cuonghoa"
+			;~ else
+				;~ OutputDebug % "not find tab_cuonghoa"
 			if this.FindImage2("duc")
 			{
 				state:=0
@@ -320,11 +320,11 @@ class Clicker {
 	}
 	
 	TimTriKy(prm*) {
-		if this.FindImage2("noichuyen") 
-		or this.FindImage2("caotu") 
+		;~ if this.FindImage2("noichuyen") 
+		;~ or this.FindImage2("caotu") 
 		;~ danh pham
-		;~ or this.FindImage2("thuongnhan") 
-		;~ or this.FindImage2("phuthuong") 
+		if this.FindImage2("thuongnhan") 
+		or this.FindImage2("phuthuong") 
 		;~ farm VH
 		or this.FindImage2("cap6") 
 		or this.FindImage2("cap5") 
@@ -338,9 +338,9 @@ class Clicker {
 	
 	NgaoDu(prm*) {
 		static step:=1, lastmove:=0
-		if Started ;~ reset state once before run
+		if ResetState ;~ reset state once before run
 		{
-			Started := 0, step:=1
+			ResetState := 0, step:=1
 		}
 		if this.FindImage({area:"461|553|70|19", name:"ndstart", pnt:{x:531, y:454}})
 		or this.FindImage({area:"509|304|38|39", name:"eor"})
@@ -362,16 +362,16 @@ class Clicker {
 	ThapTL(prm*)
 	{
 		static state:=0
-		if Started ;~ reset state once before run
+		if ResetState ;~ reset state once before run
 		{
-			Started := 0, state:=0
+			ResetState := 0, state:=0
 		}
 		if state=0 
 		{
 			
 			if this.FindImage2("vuot_disable", false)
 			{
-				OutputDebug % "do click!! at input " state
+				;~ OutputDebug % "do click!! at input " state
 				this.DoClick({x:707, y:283})
 				state++
 			}
@@ -388,19 +388,19 @@ class Clicker {
 		}
 		else if state=2
 		{
-			OutputDebug % "do click!! at input " state
+			;~ OutputDebug % "do click!! at input " state
 			if this.FindImage2("dongy")
 				state:=0
 		}
 	}
 	FarmQDExec(prm*) {
 		static index:=0, next:=0
-		if Started ;~ reset state once before run
+		if ResetState ;~ reset state once before run
 		{
-			Started := 0, index:=0, next:=0
+			ResetState := 0, index:=0, next:=0
 		}
 		if(next) {
-			next:=false
+			next:=0
 			if( index < Maps.length() ) {
 				if index = 1 
 				{ ;~ pvevent
@@ -425,22 +425,22 @@ class Clicker {
 				this.Stop()
 			else if !index
 			{
-				next:=true
+				next:=1
 				return
 			}
 			else 
-				RestartSub := 1
+				ResetSubstate := 1
 		}
 				
 		next:=this.FnExec(Images, Maps[index].pnt)
 	}
 	
 	HostExec(prm*) {
-		static state:=0, lastmem:=0, lastjoined:=0
+		static state:=0, index:=0, tick:=0
 		
-		if Started ;~ reset state once before run
+		if ResetState ;~ reset state once before run
 		{
-			Started:=0, state:=0, lastmem:=0
+			ResetState:=0, state:=0, index:=0, tick:=0
 		}
 		
 		if(state = 3) { ;~ fighting
@@ -457,18 +457,35 @@ class Clicker {
 				return
 			}
 			if(IsVKT) {
-				diff := A_TickCount - lastjoined
-				if(diff > 7150) { 
-					x:=257+0*76, y:=381+0*54
-					this.DoClick({x:x, y:y}, Subs[lastmem]) ;~ join lane
-					this.DoClick({x:467, y:387},  Subs[lastmem]) ;~ accept buy
-					lastjoined := A_TickCount, lastmem++
-					if(lastmem > Subs.length())
-						lastmem := 0
-					
+				diff := A_TickCount - tick
+				per := 6950 / (Subs.length() + 1)
+				if(diff > per) { 
+					x:=257+index*76, y:=381+index*54, tick := A_TickCount
+					this.DoClick({x:x, y:y}, Subs[index]) ;~ join lane
+					this.DoClick({x:467, y:387},  Subs[index]) ;~ accept buy
+					if ++index > Subs.length()
+						index := 0
 				}
+				
+				;~ if tick > 0
+				;~ {
+					;~ if A_TickCount-tick < 1250
+						;~ return
+					;~ tick := 0
+				;~ }
+				
+				;~ if this.FindImage2("outland", false, Subs[index])
+				;~ {
+					;~ x:=257+index*76, y:=381+index*54, tick := A_TickCount
+					;~ this.DoClick({x:x, y:y}, Subs[index]) ;~ join lane
+					;~ this.FindImage2("confirm1", true, Subs[index])
+					;~ this.DoClick({x:467, y:387}, Subs[index])
+					;~ if ++index > Subs.length()
+						;~ index := 0
+				;~ }
+				
 			} else {
-				if(lastjoined < Subs.length()) {
+				if(index < Subs.length()) {
 					loop % Subs.length() 
 					{
 						win:=Subs[A_Index]
@@ -476,7 +493,9 @@ class Clicker {
 							this.DoClick({x:820, y:613}, win)
 						} else if(this.FindImage({area:"784|699|226|32", name:"thoat"}, win)) {
 							this.DoClick({x:965, y:613}, win)
-							lastjoined++
+							index++
+						} else if this.FindImage2("loadcbfail", true, win) {
+							index++
 						}
 					}
 					return
@@ -495,19 +514,27 @@ class Clicker {
 			loop % Subs.length() 
 			{
 				win:=Subs[A_Index]
-				if(this.FindImage({area:"549|431|75|45", name:"attack"}, win)) {
+				if(this.FindImage({area:"549|431|75|45", name:"attack"}, win)) 
+				{
 					this.DoClick({x:585, y:343}, win)
-				} else { 
-					loop % Searches.length() 
+				} 
+				else 
+				{ 
+					;~ loop % Searches.length() 
 					{
-						if(this.FindImage({area:"680|345|73|23", name:"inteam"}, win)
-						|| this.FindImage({area:"725|373|73|23", name:"inteam"}, win)) { ;~ ok, joined
+						;~ if(this.FindImage({area:"680|345|73|23", name:"inteam"}, win)
+						;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}, win)) { ;~ ok, joined
+						if this.FindImage2("inteam", false, win)
+						{
 							joined++
-							break
-						} else if(this.FindImage({area:Searches[A_Index].area, name:"host"}, win)) {
-							x:=Searches[A_Index].p.x, y:=Searches[A_Index].p.y
-							this.DoClick({x:x, y:y}, win)
-							break
+							;~ break
+						} 
+						else 
+						{
+							this.FindImage2("host", true, win) 
+							this.FindImage2("host2", true, win)
+							;~ //x:=Searches[A_Index].p.x, y:=Searches[A_Index].p.y
+							;~ this.DoClick({x:x, y:y}, win)
 						}
 					}
 				}
@@ -522,7 +549,7 @@ class Clicker {
 				  ;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}))) 
 				if this.FindImage({area:"784|699|226|32", name:"thoat"})
 				{ ;~ ok go
-					state++, lastmem:=0
+					state++, index:=0
 				} else {
 					this.DoClick({x:810, y:541})
 				}
@@ -530,7 +557,7 @@ class Clicker {
 			else if this.FindImage({area:"629|594|178|38", name:"khaichien", pnt:{x:765, y:513}})
 			{
 				state++
-				lastjoined:=0
+				index:=0
 			}
 		} else if(state=0) {
 			if(IsVKT) {
@@ -552,9 +579,9 @@ class Clicker {
 					this.DoClick({x:695, y:513})
 					;~ ok, wait for team up
 					state++
-					this.SequencesClick(Mouses) ;~ go in
+					this.MemberClick(Mouses[1])
 				} else {
-					this.SequencesClick(Mouses)
+					this.SequencesClick(Mouses) ;~ go in
 				}
 			}
 		}
@@ -636,7 +663,7 @@ class Clicker {
 		res := Gdip_ImageSearch(bmpArea, Bitmaps[screen.name])
 		if res > 0 
 		{
-			OutputDebug % "[FindImage] image " screen.name "!!"
+			;~ OutputDebug % "[FindImage] image " screen.name "!!"
 			if screen.pnt <> ""
 				this.DoClick(screen.pnt)
 		}
@@ -666,8 +693,15 @@ class Clicker {
 			;~ OutputDebug % "found " name " at x: " C1 ", y: " C2
 			if click
 			{
+				if (name = "host" or name = "host2")
+				{
+					OutputDebug % "" x ":" y
+					;~ x+=180
+					this.DoClick({x:586, y:243}, win)
+					return
+				}
 				x:=C1, y:=85+C2-MouseOffset
-				this.DoClick({x:x,y:y})
+				this.DoClick({x:x,y:y}, win)
 			}
 		} 
 		;~ else
@@ -693,6 +727,7 @@ class Clicker {
 	}
 }
 
+
 LoadBitmaps()
 {
 	Bitmaps:={}
@@ -702,27 +737,23 @@ LoadBitmaps()
 		StringSplit, S, A_LoopReadLine, =
 		name:=Trim(S1)
 		StringSplit, C, % Trim(S2), % A_Space
-		OutputDebug % "name: " name " x: " C1 ", y:" C2 ", w:" C3 ", h:" C4
+		;~ OutputDebug % "name: " name " x: " C1 ", y:" C2 ", w:" C3 ", h:" C4
 		Bitmaps[name] := Gdip_CloneBitmapArea(texture, C1, C2, C3, C4)
 		;~ Gdip_SaveBitmapToFile(Bitmaps[name], "output\" name ".png", 100)
 	}
 	Gdip_DisposeImage(texture)
 }
 SetUpGameHWND() {
-	Main:=-1, Subs:=[]
-	WinGet, all, List, S2
-	OutputDebug % "found " all " S2!"
-	loop % all
+	Main:=-1, Subs:=[], T:="S2,S4"
+	Loop, Parse, T, `,
 	{
-		Subs.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
-	}
-	WinGet, all, List, S4
-	OutputDebug % "found " all " S4!"
-	loop % all
-	{
-		Subs.Push(all%A_Index%)
-		WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
+		WinGet, all, List, %A_LoopField%
+		OutputDebug % "found " all " " A_LoopField
+		loop % all
+		{
+			Subs.Push(all%A_Index%)
+			WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+		}
 	}
 	
 	if( Subs.length() = 1) {
@@ -836,7 +867,7 @@ ToggleSH(turnOn){
 	if turnOn
 	{
 		Sleep 250
-		ControlSetText, 1.0, 10, ahk_id %ce%
+		ControlSetText, 1.0, 25, ahk_id %ce%
 		ControlClick, Apply, ahk_id %ce%,,,, NA
 	}
 	return
