@@ -119,7 +119,7 @@ l_SetWinOrPos:
 				}
 			}
 		}
-		;~ OutputDebug % "" Main
+		OutputDebug % "" Main
 	}
 	return
 l_Restart:
@@ -531,8 +531,8 @@ class Clicker {
 						} 
 						else 
 						{
-							this.FindImage2("host", true, win) 
-							this.FindImage2("host2", true, win)
+							this.FindImage2("host,host2,host3", true, win) 
+							;~ this.FindImage2("host2", true, win)
 							;~ //x:=Searches[A_Index].p.x, y:=Searches[A_Index].p.y
 							;~ this.DoClick({x:x, y:y}, win)
 						}
@@ -677,36 +677,38 @@ class Clicker {
 		Gdip_DisposeImage(bmpArea)
 		return (res > 0)
 	}
-	FindImage2(name, click:=true, win:=0) {
+	FindImage2(names, click:=true, win:=0) {
 		if !win
 			win:=Main
 		;~ x:=0, y:=85, w:=700, h:=600
 		bmpArea := GDIP_BitmapFromScreen("hwnd:" win "|0|73|1010|600") 
-		;~ Gdip_SaveBitmapToFile(bmpArea, "screen2.png", 100)
-		;~ Gdip_SaveBitmapToFile(Bitmaps[name], name "2.png", 100)
-		;~ bmpFind := Gdip_CreateBitmapFromFile("res\" screen.name ".png")
-		;~ res := Gdip_ImageSearch(bmpArea, bmpFind)
-		res := Gdip_ImageSearch(bmpArea, Bitmaps[name], list)
-		if res > 0 
+		Loop, Parse, names, `,
 		{
-			StringSplit, C, list, `,
-			;~ OutputDebug % "found " name " at x: " C1 ", y: " C2
-			if click
+			;~ Gdip_SaveBitmapToFile(bmpArea, "screen2.png", 100)
+			;~ Gdip_SaveBitmapToFile(Bitmaps[A_LoopField], name "2.png", 100)
+			;~ bmpFind := Gdip_CreateBitmapFromFile("res\" screen.name ".png")
+			;~ res := Gdip_ImageSearch(bmpArea, bmpFind)
+			res := Gdip_ImageSearch(bmpArea, Bitmaps[A_LoopField], list)
+			if res > 0 
 			{
-				if (name = "host" or name = "host2")
+				StringSplit, C, list, `,
+				;~ OutputDebug % "found " A_LoopField " at x: " C1 ", y: " C2
+				if click
 				{
-					OutputDebug % "" x ":" y
-					;~ x+=180
-					this.DoClick({x:586, y:243}, win)
-					return
+					x:=C1, y:=75+C2-MouseOffset
+					if names contains "host,host2,host3"
+					{
+						x:=C1+200
+					}
+					;~ OutputDebug % "click " A_LoopField " at x: " x ", y: " y
+					this.DoClick({x:x,y:y}, win)
+					goto EndFI2
 				}
-				x:=C1, y:=85+C2-MouseOffset
-				this.DoClick({x:x,y:y}, win)
 			}
-		} 
-		;~ else
-			;~ OutputDebug % "" name " not found!"
-		
+			;~ else 
+				;~ OutputDebug % "" A_LoopField " not found!!"
+		}	
+		EndFI2:
 		Gdip_DisposeImage(bmpArea)
 		return (res > 0)
 	}
@@ -748,11 +750,12 @@ SetUpGameHWND() {
 	Loop, Parse, T, `,
 	{
 		WinGet, all, List, %A_LoopField%
-		OutputDebug % "found " all " " A_LoopField
+		;~ OutputDebug % "found " all " " A_LoopField
 		loop % all
 		{
 			Subs.Push(all%A_Index%)
 			WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+			OutputDebug % "" A_Index ": " all%A_Index%
 		}
 	}
 	
