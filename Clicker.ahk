@@ -82,10 +82,10 @@ Label_4:
 ;~	clicker.Start("QTExec", 550)
 	return
 Label_5:
-	clicker.Start("TimTriKy", 750)
+	;~ clicker.Start("TimTriKy", 750)
 	;~ clicker.Start("NgaoDu", 550)
 	;~ clicker.Start("ThapTL", 550)
-	;~ clicker.Start("DucTB", 550)
+	clicker.Start("DucTB", 550)
 	return
 l_StopExec:
 	if EnableSH
@@ -148,7 +148,7 @@ class Clicker {
 			return
 		
 		if(!ImgSeq) {
-			this.SequencesClick(MouseSeq)
+			this.SequencesClick(MouseSeq, !true)
 		}
 		clicked := false
 		if this.FindImage({area:"89|288|856|420", name:"nhanx2", pnt:{x:695, y:440}})
@@ -436,7 +436,7 @@ class Clicker {
 	}
 	
 	HostExec(prm*) {
-		static state:=0, index:=0, tick:=0
+		static state:=0, index:=0, tick:=0, stt_1:=0, stt_2:=0
 		
 		if ResetState ;~ reset state once before run
 		{
@@ -453,7 +453,7 @@ class Clicker {
 				}
 				this.MemberClick({x:505, y:460})
 				this.DoClick({x:505, y:460})
-				state:=0
+				state:=0, tick:=0
 				return
 			}
 			if(IsVKT) {
@@ -469,7 +469,7 @@ class Clicker {
 				
 				;~ if tick > 0
 				;~ {
-					;~ if A_TickCount-tick < 1250
+					;~ if A_TickCount-tick < 5250
 						;~ return
 					;~ tick := 0
 				;~ }
@@ -478,69 +478,96 @@ class Clicker {
 				;~ {
 					;~ x:=257+index*76, y:=381+index*54, tick := A_TickCount
 					;~ this.DoClick({x:x, y:y}, Subs[index]) ;~ join lane
-					;~ this.FindImage2("confirm1", true, Subs[index])
 					;~ this.DoClick({x:467, y:387}, Subs[index])
 					;~ if ++index > Subs.length()
 						;~ index := 0
 				;~ }
 				
 			} else {
-				if(index < Subs.length()) {
-					loop % Subs.length() 
+				if(index < Subs.length()+1) {
+					loop % Subs.length()+1 
 					{
-						win:=Subs[A_Index]
-						if(this.FindImage({area:"784|699|226|32", name:"ketqua"}, win)) {
-							this.DoClick({x:820, y:613}, win)
+						win:=Subs[A_Index-1]
+						if this.FindImage2("loadcbfail", true, win) {
+							index++
 						} else if(this.FindImage({area:"784|699|226|32", name:"thoat"}, win)) {
 							this.DoClick({x:965, y:613}, win)
 							index++
-						} else if this.FindImage2("loadcbfail", true, win) {
-							index++
-						}
-					}
-					return
-				}
-				if(this.FindImage({area:"784|699|226|32", name:"ketqua"})) {
-					this.DoClick({x:820, y:613})
-				} else if(this.FindImage({area:"784|699|226|32", name:"thoat"})) {
-					this.DoClick({x:965, y:613})
-					state:=0
-				} else if this.FindImage2("loadcbfail") {
-					state:=0
-				}
-			}
-		} else if(state=1) {  ;~ teaming up
-			joined:=0
-			loop % Subs.length() 
-			{
-				win:=Subs[A_Index]
-				if(this.FindImage({area:"549|431|75|45", name:"attack"}, win)) 
-				{
-					this.DoClick({x:585, y:343}, win)
-				} 
-				else 
-				{ 
-					;~ loop % Searches.length() 
-					{
-						;~ if(this.FindImage({area:"680|345|73|23", name:"inteam"}, win)
-						;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}, win)) { ;~ ok, joined
-						if this.FindImage2("inteam", false, win)
-						{
-							joined++
-							;~ break
+						}  else if(this.FindImage({area:"784|699|226|32", name:"ketqua"}, win)) {
+							this.DoClick({x:820, y:613}, win)
 						} 
-						else 
-						{
-							this.FindImage2("host,host2,host3", true, win) 
-							;~ this.FindImage2("host2", true, win)
-							;~ //x:=Searches[A_Index].p.x, y:=Searches[A_Index].p.y
-							;~ this.DoClick({x:x, y:y}, win)
-						}
+					}
+				}
+				if (index=Subs.length()+1)
+					index:=0, state:=4, stt_1:=0, stt_2:=0
+			}
+		} 
+		else if (state=4)
+		{
+			;~ if (index < Subs.length()+1)
+			allok:=0
+			{
+				loop % Subs.length()+1
+				{
+					win:=Subs[A_Index-1]
+					if this.FindImage2("below100", false, win)
+					{
+						this.QuayTinhTu(stt_%A_Index%, win)
+						if (stt_%A_Index% = 0)
+							allok++
+					}
+					else 
+						allok++
+				}
+			}
+			if (allok=Subs.length()+1)
+				index:=0, state:=0
+		}
+		else if(state=1) 
+		{  ;~ teaming up
+			if (index < Subs.length())
+			{
+				loop % Subs.length()
+				{
+					win:=Subs[A_Index]
+					if this.FindImage2("inteam", false, win)
+					{
+						index++
+					} 
+					else if this.FindImage2("host,host2,host3", true, win)
+					{
+						;~ OutputDebug % "Subs[" A_Index "] joined!" 
 					}
 				}
 			}
-			if(joined = Subs.length()) ;~ ok all in >> start
-				state++
+			if (index = Subs.length())
+			{
+				if IsVKT
+					state++, index:=0
+				else if this.FindImage2("khaichien")
+					state:=3, index:=0
+			}
+			;~ joined:=0
+			;~ loop % Subs.length() 
+			;~ {
+				;~ win:=Subs[A_Index]
+				;~ if this.FindImage2("inteam", false, win)
+				;~ {
+					;~ joined++
+					;~ break
+				;~ } 
+				;~ else if this.FindImage2("host,host2,host3", true, win)
+				;~ {
+					;~ OutputDebug % "Subs[" A_Index "] joined!" 
+				;~ }
+				;~ else if(this.FindImage({area:"549|431|75|45", name:"attack"}, win)) 
+				;~ {
+					;~ this.DoClick({x:585, y:343}, win)
+				;~ } 
+				;~ else this.DoClick(Mouses[1], win)
+			;~ }
+			;~ if(joined = Subs.length()) ;~ ok all in >> start
+				;~ state++
 		} else if(state=2) {
 			if (IsVKT)
 			{
@@ -549,7 +576,7 @@ class Clicker {
 				  ;~ || this.FindImage({area:"725|373|73|23", name:"inteam"}))) 
 				if this.FindImage({area:"784|699|226|32", name:"thoat"})
 				{ ;~ ok go
-					state++, index:=0
+					state++, index:=0, tick:=0
 				} else {
 					this.DoClick({x:810, y:541})
 				}
@@ -573,21 +600,93 @@ class Clicker {
 					this.MemberClick({x:510, y:533}) ;~ attk
 				}
 			} else {
-				if(this.FindImage({area:"549|431|75|45", name:"attack"})) {
-					this.DoClick({x:585, y:343})
-				} else if(this.FindImage({area:"629|594|178|38", name:"lapdoi"})) {
-					this.DoClick({x:695, y:513})
-					;~ ok, wait for team up
-					state++
-					this.MemberClick(Mouses[1])
-				} else {
-					this.SequencesClick(Mouses) ;~ go in
+				
+				if (index < Subs.length()+1)
+				{
+					loop % Subs.length()+1
+					{
+						win:=Subs[A_Index-1]
+						
+						if this.FindImage2("attack", true, win)
+							index++
+						else
+							this.DoClick(Mouses[1], win)
+					}
 				}
+				if (index = Subs.length()+1)
+				{
+					if this.FindImage2("lapdoi")
+						state++, index:=0
+				}
+				
+				;~ if(this.FindImage({area:"549|431|75|45", name:"attack"})) {
+					;~ this.DoClick({x:585, y:343})
+				;~ } else if(this.FindImage({area:"629|594|178|38", name:"lapdoi"})) {
+					;~ this.DoClick({x:695, y:513})
+					;~ ;ok, wait for team up
+					;~ state++
+				;~ } else {
+					;~ this.SequencesClick(Mouses) ;~ go in
+				;~ }
 			}
 		}
 		;~ OutputDebug % "FarmQDExec Delta: " (A_TickCount-dt)
 	}
 	
+	QuayTinhTu(byref state, win)
+	{
+		if state=0
+		{
+			if this.FindImage2("tinhtu",true, win)
+				state:=1
+		}
+		else if state=1
+		{
+			if this.FindImage2("zeroleft", false, win)
+			{
+				if this.FindImage2("buy", true, win)
+				{
+					state:=2
+				}
+			}
+			else
+			{
+				state:=3
+			}
+		}
+		else if state=2
+		{
+			if this.FindImage2("confirm2", false, win)
+			{
+				loop, 9
+					this.DoClick({x:505, y:320}, win)
+			}
+			if this.FindImage2("confirm2", true, win)
+				state:=3
+		}
+		else if state=3
+		{
+			if this.FindImage2("selfopen", true, win)
+			{
+				state:=4
+			}
+			else 
+				state:=5
+		}
+		else if state=4
+		{
+			if this.FindImage2("confirm2", true, win)
+				state:=5
+		}
+		else if state=5
+		{
+			if this.FindImage2("xbtn", true, win)
+			{
+				state:=0
+			}
+		}
+		return state
+	}
 	
 	;~ internal function
 	IsEmpty(Arr) {
@@ -754,7 +853,7 @@ SetUpGameHWND() {
 		loop % all
 		{
 			Subs.Push(all%A_Index%)
-			WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+			WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
 			OutputDebug % "" A_Index ": " all%A_Index%
 		}
 	}

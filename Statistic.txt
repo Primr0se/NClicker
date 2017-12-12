@@ -5,3 +5,13 @@ Open chest at 05:23:40, total: 4 times
 Open chest at 02:47:42, total: 1 times
 Open chest at 04:58:11, total: 2 times
 Open chest at 07:08:29, total: 3 times
+Open chest at 01:07:16, total: 1 times
+Open chest at 03:15:35, total: 2 times
+Open chest at 05:23:50, total: 3 times
+Open chest at 07:31:49, total: 4 times
+Open chest at 03:37:49, total: 1 times
+Open chest at 05:44:58, total: 2 times
+Open chest at 07:53:29, total: 3 times
+Open chest at 01:48:28, total: 1 times
+Open chest at 04:01:18, total: 2 times
+Open chest at 06:27:05, total: 3 times
