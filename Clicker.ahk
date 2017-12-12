@@ -517,7 +517,10 @@ class Clicker {
 							allok++
 					}
 					else 
+					{
+						this.FindImage2("xbtn", true, win) ;~ double check
 						allok++
+					}
 				}
 			}
 			if (allok=Subs.length()+1)
@@ -638,23 +641,23 @@ class Clicker {
 		if state=0
 		{
 			if this.FindImage2("tinhtu",true, win)
-				state:=1
+				state++
 		}
-		else if state=1
+		else if state=3 ;~ spin open
 		{
 			if this.FindImage2("zeroleft", false, win)
 			{
 				if this.FindImage2("buy", true, win)
 				{
-					state:=2
+					state++
 				}
 			}
 			else
 			{
-				state:=3
+				state:=8 ;~ have some chests, just open it
 			}
 		}
-		else if state=2
+		else if state=4 ;~ buy
 		{
 			if this.FindImage2("confirm2", false, win)
 			{
@@ -662,28 +665,32 @@ class Clicker {
 					this.DoClick({x:505, y:320}, win)
 			}
 			if this.FindImage2("confirm2", true, win)
-				state:=3
+				state++
 		}
-		else if state=3
+		else if state=8 ;~ open chest
 		{
 			if this.FindImage2("selfopen", true, win)
 			{
-				state:=4
+				state++
 			}
 			else 
-				state:=5
+				state:=10 ;~ spinning, close it
 		}
-		else if state=4
+		else if state=9
 		{
 			if this.FindImage2("confirm2", true, win)
-				state:=5
+				state++
 		}
-		else if state=5
+		else if state=10 ;~ close
 		{
 			if this.FindImage2("xbtn", true, win)
 			{
 				state:=0
 			}
+		}
+		else
+		{
+			state++
 		}
 		return state
 	}
