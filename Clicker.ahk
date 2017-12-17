@@ -40,6 +40,7 @@ Hotkey, IfWinActive, S4
 Hotkey, F1, l_ToggleKeys
 Hotkey, Esc, l_StopExec
 Hotkey, ^LButton, l_SetWinOrPos
+Hotkey, +LButton, l_SetDynamicBitmap
 ;~ Hotkey, Space, l_SimClick
 ;~ Hotkey, LButton, l_MultiClick
 loop 5
@@ -51,6 +52,7 @@ l_ToggleKeys:
 	if(active:=!active) {
 		Hotkey, Esc, On
 		Hotkey, ^LButton, On
+		Hotkey, +LButton, On
 		;~ Hotkey, Space, On
 		;~ Hotkey, LButton, On
 		loop 5
@@ -59,6 +61,7 @@ l_ToggleKeys:
 	} else {
 		Hotkey, Esc, Off
 		Hotkey, ^LButton, Off
+		Hotkey, +LButton, Off
 		;~ Hotkey, Space, Off
 		;~ Hotkey, LButton, Off
 		loop 5
@@ -73,7 +76,7 @@ Label_1:
 	clicker.Start("FarmQDExec")
 	return
 Label_2:
-	clicker.Start("FnExec", 350,, Mouses)
+	clicker.Start("FnExec", 175,, Mouses)
 	return
 Label_3:
 	clicker.Start("MultiSubs")
@@ -85,8 +88,8 @@ Label_4:
 Label_5:
 	;~ clicker.Start("TimTriKy", 750)
 	;~ clicker.Start("NgaoDu", 550)
-	clicker.Start("ThapTL", 550)
-	;~ clicker.Start("DucTB", 550)
+	;~ clicker.Start("ThapTL", 550)
+	clicker.Start("DucTB", 550)
 	return
 l_StopExec:
 	if EnableSH
@@ -123,6 +126,21 @@ l_SetWinOrPos:
 		OutputDebug % "" Main
 	}
 	return
+l_SetDynamicBitmap:
+	MouseGetPos x, y, win
+	y-=MouseOffset
+	Mouses.Push({x: x, y: y})
+	if Bitmaps["dynamic_ql"]
+		Gdip_DisposeImage(Bitmaps["dynamic_ql"])
+	Bitmaps["dynamic_ql"]:= GDIP_BitmapFromScreen("hwnd:" win "|100|183|25|10")
+	if clicker.FindImage2("lapdoi", false, win)
+	{
+		if Bitmaps["dynamic_host"]
+			Gdip_DisposeImage(Bitmaps["dynamic_host"])
+		Bitmaps["dynamic_host"]:= GDIP_BitmapFromScreen("hwnd:" win "|380|275|25|13")
+	}
+	;~ Gdip_SaveBitmapToFile(Bitmaps["dynamic"], "dynamic.png", 100)
+	return
 l_Restart:
 	Reload
 	return
@@ -149,7 +167,7 @@ class Clicker {
 			return
 		
 		if(!ImgSeq) {
-			this.SequencesClick(MouseSeq)
+			this.SequencesClick(MouseSeq, !true)
 		}
 		clicked := false
 		if this.FindImage({area:"89|288|856|420", name:"nhanx2", pnt:{x:695, y:440}})
@@ -318,6 +336,7 @@ class Clicker {
 		{
 			this.DoClick({x:584, y:465})
 		}
+		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 	}
 	
 	TimTriKy(prm*) {
@@ -436,6 +455,7 @@ class Clicker {
 		}
 				
 		next:=this.FnExec(Images, Maps[index].pnt)
+		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 	}
 	
 	MultiSubs(prms*)
@@ -444,18 +464,29 @@ class Clicker {
 			this.VKTFarming()
 		else
 			this.GoldFarming()
+		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 	}
 	
 	GoldFarming()
 	{
-		static state:=0, index:=0, tick:=0, dt:=0, spinstate_1:=0, spinstate_2:=0 ;~, spinning_1:=0, spinning_2:=0
+		static state:=0, index:=0, ready:=0, spinstate_1:=0, spinstate_2:=0 ;~, spinning_1:=0, spinning_2:=0
 		
 		if ResetState
 		{
-			ResetState:=0, state:=0, index:=0, tick:=0
+			ResetState:=0, state:=0, index:=0, ready:=0
 		}
 		if (state=0)
 		{
+			loop % Subs.length()+1
+			{
+				win:=Subs[A_Index-1]
+				while this.FindImage2("buy",false, win)
+				{
+					this.FindImage2("confirm2,xbtn", true, win) 
+					Sleep 75
+				}
+			}
+			;~ all ok >> check attack status
 			if (index<Subs.length()+1)
 			{
 				loop % Subs.length()+1
@@ -488,7 +519,7 @@ class Clicker {
 						;~ OutputDebug % "Ok, " Subs[A_Index] " ready!"
 						index++
 					}
-					else if this.FindImage2("host,host2,host3", true, Subs[A_Index]) 
+					else if this.FindImage2("dynamic_host,host,host2,host3", true, Subs[A_Index]) 
 					{
 						;~ OutputDebug % "" Subs[A_Index] " found host, joined in!!"
 					}
@@ -533,29 +564,15 @@ class Clicker {
 				loop % Subs.length()+1
 				{
 					win:=Subs[A_Index-1]
-					if (A_Index=1)
-						win:=Main
-					;~ if (true)
-					if this.FindImage2("below100", false, win)
+					if this.FindImage2("ql100,dynamic_ql", false, win) ;~ out ot ql
 					{
-						;~ OutputDebug % "spinning_" A_Index ": " spinning_%A_Index%
-						;~ if (spinning_%A_Index%=1)
-							;~ allok++
-						;~ else
-						{
-							this.QuayTinhTu(spinstate_%A_Index%, win)
-							;~ OutputDebug % "spinstate_" A_Index ": " spinstate_%A_Index%
-							if (spinstate_%A_Index% = 0)
-								allok++
-							;~ else if (spinstate_%A_Index% = 12)
-								;~ allok++, spinning_%A_Index%:=1, spinstate_%A_Index%:=0
-						}
+						this.QuayTinhTu(spinstate_%A_Index%, win)
+						if !spinstate_%A_Index%
+							allok++
 					}
 					else 
 					{
-						this.FindImage2("xbtn", true, win) ;~ double check
 						allok++
-						;~ , spinning_%A_Index%:=0
 					}
 				}
 			}
@@ -643,41 +660,36 @@ class Clicker {
 	}
 	
 	QuayTinhTu(byref state, win)
-	{	;~ state
-		;~ 	0: start
-		;~ 	1:
-		;~ 	2:
-		;~ 	3: open > check number of chest
-		;~ 	4: click on buy
-		;~ 	5: input chests to buy then confirm
-		;~ 	6:
-		;~ 	7:
-		;~ 	8:
-		;~ 	9: click on selfopen chest
-		;~ 	10: confirm open
-		;~ 	11: close
-		;~ OutputDebug % "QuayTinhTu:: >> " win
-		start:=false
+	{	
+		if !win
+			win:=Main
 		if state=0
 		{
 			if this.FindImage2("tinhtu",true, win)
 				state++
 		}
-		else if state=3 ;~ spin open
+		else if state=1 ;~ spin open
 		{
+			Loop {
+				OutputDebug % "be patient... opening..."
+				Sleep 25
+			} Until this.FindImage2("buy", false, win)
+			
 			if this.FindImage2("zeroleft", false, win)
 			{
 				if this.FindImage2("buy", true, win)
-				{
 					state++
-				}
-			}
-			else
+			} 
+			else if this.FindImage2("selfopen", true, win)
 			{
-				state:=9 ;~ have some chests, just open it
+				state:=7
+			}
+			else if this.FindImage2("xbtn", true, win)
+			{
+				state:=0
 			}
 		}
-		else if state=4 ;~ buy
+		else if state=2 ;~ buy
 		{
 			if this.FindImage2("confirm2", false, win)
 			{
@@ -685,39 +697,24 @@ class Clicker {
 				state++ ;~ move next state to avoid doubleclick-like
 			}
 		}
-		else if state=5
+		else if state=3
 		{
-			;~ ControlSend,ahk_parent,{Raw}0, ahk_id %win%
+			ControlSend,ahk_parent,{Raw}0, ahk_id %win%
 			if this.FindImage2("confirm2", true, win)
 				state++
 		}
-		else if state=9 ;~ open chest
+		else if state=6 ;~ open chest
 		{
 			if this.FindImage2("selfopen", true, win)
-			{
 				state++
-			}
-			else 
-				state:=11 ;~ spinning, close it
 		}
-		else if state=10
+		else if state=7
 		{
 			if this.FindImage2("confirm2", true, win)
-				state++, start:=true
+				if this.FindImage2("xbtn", true, win)
+					state:=0
 		}
-		else if state=11 ;~ close
-		{
-			if this.FindImage2("xbtn", true, win)
-			{
-				state:=0
-			}
-		}
-		else
-		{
-			state++
-		}
-		
-		return state
+		else state++
 	}
 
 	
@@ -825,7 +822,6 @@ class Clicker {
 			if res > 0 
 			{
 				StringSplit, C, list, `,
-				;~ OutputDebug % "found " A_LoopField " at x: " C1 ", y: " C2
 				if click
 				{
 					x:=C1, y:=75+C2-MouseOffset
@@ -833,10 +829,14 @@ class Clicker {
 					{
 						x:=C1+200
 					}
-					;~ OutputDebug % "click " A_LoopField " at x: " x ", y: " y
+					else IfEqual, A_LoopField, xbtn
+					{
+						x:=855, y:=142
+						OutputDebug % "xbtn >> " x "," y
+					}
 					this.DoClick({x:x,y:y}, win)
-					goto EndFI2
 				}
+				goto EndFI2
 			}
 			;~ else 
 				;~ OutputDebug % "" A_LoopField " not found!!"
@@ -851,7 +851,7 @@ class Clicker {
 		{
 			name:=Maps[A_Index].name
 			if(this.FindImage({area:"440|705|120|22", name:name})) {
-				if (name = "gcd2" or name = "hhuy" or name = "duongco") {
+				if (name = "gcd2" or name = "hhuy") {
 					;GoPrev:=true
 					return 0
 				}
@@ -874,7 +874,7 @@ LoadBitmaps()
 		StringSplit, C, % Trim(S2), % A_Space
 		;~ OutputDebug % "name: " name " x: " C1 ", y:" C2 ", w:" C3 ", h:" C4
 		Bitmaps[name] := Gdip_CloneBitmapArea(texture, C1, C2, C3, C4)
-		;~ Gdip_SaveBitmapToFile(Bitmaps[name], "raw\" name ".png", 100)
+		;~ Gdip_SaveBitmapToFile(Bitmaps[name], "images\" name ".png", 100)
 	}
 	Gdip_DisposeImage(texture)
 }
@@ -887,14 +887,16 @@ SetUpGameHWND() {
 		loop % all
 		{
 			Subs.Push(all%A_Index%)
-			WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
+			WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
 			OutputDebug % "" A_Index ": " all%A_Index%
 		}
 	}
 	
 	if( Subs.length() = 1) {
 		Main:=Subs.Pop()
-	}
+		;~ ;MsgBox % "Main: " Main
+	} else MsgBox % "Found " Subs.length() " game window.`nMain isn't setup yet!" 
+		
 	return
 }
 SetUpMap() {
@@ -1003,7 +1005,7 @@ ToggleSH(turnOn){
 	if turnOn
 	{
 		Sleep 250
-		ControlSetText, 1.0, 25, ahk_id %ce%
+		ControlSetText, 1.0, 5, ahk_id %ce%
 		ControlClick, Apply, ahk_id %ce%,,,, NA
 	}
 	return
