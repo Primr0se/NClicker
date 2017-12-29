@@ -76,13 +76,13 @@ Label_1:
 	clicker.Start("FarmQDExec")
 	return
 Label_2:
-	clicker.Start("FnExec", 175,, Mouses)
+	clicker.Start("FnExec", 350,, Mouses)
 	return
 Label_3:
 	clicker.Start("MultiSubs")
 	return
 Label_4:
-	clicker.Start("FnExec", 250, Images, Mouses)
+	clicker.Start("FnExec", 350, Images, Mouses)
 ;~	clicker.Start("QTExec", 550)
 	return
 Label_5:
@@ -177,8 +177,7 @@ class Clicker {
 		}
 		else if(this.FindImage({area:"89|288|856|420", name:"exchange"}))
 		{
-			;~ OutputDebug % "" index
-			if index = 2 ;~ dont buy tc
+			if index <= 2
 			{
 				index++
 				return
@@ -293,19 +292,10 @@ class Clicker {
 	}
 	DucTB( param* )
 	{
-		static state:=0, count:=0
+		static state:=count:=tick:=0
 		if ResetState ;~ reset state once before run
 		{
-			ResetState := 0, state:=0
-		}
-		if this.FindImage2("ducthatbai", false)
-		or this.FindImage2("kodubac", false)
-		{
-			if this.FindImage2("tab_kho")
-			{
-				state:=1
-				return
-			}
+			ResetState:=state:=tick:=0
 		}
 		if state=1
 		{
@@ -315,28 +305,37 @@ class Clicker {
 			;~ if this.FindImage2("nhanhover")
 			if this.FindImage2("nhan")	
 			{
-				count++, state:=2
+				count++, state:=2 ;~, tick:=A_TickCount
 				FileAppend % "Open chest at " A_Hour ":" A_Min ":" A_Sec ", total: " count " times`n", Statistic.txt
 				return
 			}
 		}
-		if state=2
+		else if state=3
 		{
 			if this.FindImage2("tab_cuonghoa")
-				return
-			;~ else
-				;~ OutputDebug % "not find tab_cuonghoa"
-			if this.FindImage2("duc")
-			{
-				state:=0
-				return
-			}
+				state:=4
 		}
-		if state=0
+		else if state=4
 		{
-			this.DoClick({x:584, y:465})
+ 			if this.FindImage2("duc")
+				tick:=state:=0
 		}
-		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
+		else if state=0
+		{
+			if this.FindImage2("ducthatbai", false)
+			or this.FindImage2("kodubac", false)
+			{
+				if this.FindImage2("tab_kho")
+				{
+					state:=1
+					return
+				}
+			}
+			this.DoClick({x:584, y:465})
+			DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
+		}
+		else state++
+		
 	}
 	
 	TimTriKy(prm*) {
@@ -345,6 +344,7 @@ class Clicker {
 		;~ danh pham
 		if this.FindImage2("thuongnhan") 
 		or this.FindImage2("phuthuong") 
+		;~ or this.FindImage2("camthi") 
 		;~ farm VH
 		or this.FindImage2("cap6") 
 		or this.FindImage2("cap5") 
@@ -1005,7 +1005,7 @@ ToggleSH(turnOn){
 	if turnOn
 	{
 		Sleep 250
-		ControlSetText, 1.0, 5, ahk_id %ce%
+		ControlSetText, 1.0, 10, ahk_id %ce%
 		ControlClick, Apply, ahk_id %ce%,,,, NA
 	}
 	return
