@@ -22,8 +22,9 @@ active:=0, gdipToken := Gdip_Startup(), clicker := new Clicker()
 
 global OffsetX:=6, OffsetY:=-65, MouseOffset:=40
 global ResetState := 0, ResetSubstate := 0
+global StatCnt:=0, StatPer:=0, StatBuy:=0, Stat:=0
 ;~ super global var
-global Bitmaps, Images, Mouses, Maps, Searches, NDSteps, Main, Subs
+global Bitmaps, Images, Mouses, Maps, NDSteps, Main, Subs
 global timer:=Object, IsTB:=false, IsVKT:=false
 
 SetUpGameHWND()
@@ -31,7 +32,6 @@ SetUpGameHWND()
 LoadBitmaps()
 SetUpMap()
 SetUpImage()
-SetUpVKT()
 SetUpNgaoDu()
 
 Suspend, On
@@ -40,11 +40,10 @@ Hotkey, IfWinActive, S4
 Hotkey, F1, l_ToggleKeys
 Hotkey, Esc, l_StopExec
 Hotkey, ^LButton, l_SetWinOrPos
-Hotkey, +LButton, l_SetDynamicBitmap
 ;~ Hotkey, Space, l_SimClick
 ;~ Hotkey, LButton, l_MultiClick
-loop 5
-	Hotkey % A_Index, Label_%A_Index%
+loop 4
+	Hotkey % A_Index, l_Num%A_Index%
 return
 
 l_ToggleKeys:
@@ -52,45 +51,44 @@ l_ToggleKeys:
 	if(active:=!active) {
 		Hotkey, Esc, On
 		Hotkey, ^LButton, On
-		Hotkey, +LButton, On
 		;~ Hotkey, Space, On
 		;~ Hotkey, LButton, On
-		loop 5
+		loop 4
 			Hotkey % A_Index , On
 		Menu, Tray, Icon, IconReady.ico
 	} else {
 		Hotkey, Esc, Off
 		Hotkey, ^LButton, Off
-		Hotkey, +LButton, Off
 		;~ Hotkey, Space, Off
 		;~ Hotkey, LButton, Off
-		loop 5
+		loop 4
 			Hotkey % A_Index , Off
 		clicker.Stop()
 		Menu, Tray, Icon, IconDeactive.ico
 	}
 	return
-Label_1:
+l_Num1:
 	if !EnableSH
 		ToggleSH(EnableSH:=!EnableSH)
 	clicker.Start("FarmQDExec")
 	return
-Label_2:
+l_Num2:
 	clicker.Start("FnExec", 350,, Mouses)
 	return
-Label_3:
-	clicker.Start("MultiSubs")
+l_Num3:
+	clicker.Start()
 	return
-Label_4:
-	clicker.Start("FnExec", 350, Images, Mouses)
-;~	clicker.Start("QTExec", 550)
-	return
-Label_5:
-	;~ clicker.Start("TimTriKy", 750)
-	;~ clicker.Start("NgaoDu", 550)
-	;~ clicker.Start("ThapTL", 550)
-	clicker.Start("DucTB", 550)
-	return
+l_Num4:
+ 	clicker.Start("FnExec", 250, Images, Mouses)
+	;~ clicker.Start("QTExec", 550)
+ 	return
+/* Label_5:
+ * 	;~ clicker.Start("TimTriKy", 750)
+ * 	;~ clicker.Start("NgaoDu", 550)
+ * 	;~ clicker.Start("ThapTL", 550)
+ * 	clicker.Start("DucTB", 550)
+ * 	return
+ */
 l_StopExec:
 	if EnableSH
 		ToggleSH(EnableSH:=!EnableSH)
@@ -125,21 +123,6 @@ l_SetWinOrPos:
 		}
 		OutputDebug % "" Main
 	}
-	return
-l_SetDynamicBitmap:
-	MouseGetPos x, y, win
-	y-=MouseOffset
-	Mouses.Push({x: x, y: y})
-	if Bitmaps["dynamic_ql"]
-		Gdip_DisposeImage(Bitmaps["dynamic_ql"])
-	Bitmaps["dynamic_ql"]:= GDIP_BitmapFromScreen("hwnd:" win "|100|183|25|10")
-	if clicker.FindImage2("lapdoi", false, win)
-	{
-		if Bitmaps["dynamic_host"]
-			Gdip_DisposeImage(Bitmaps["dynamic_host"])
-		Bitmaps["dynamic_host"]:= GDIP_BitmapFromScreen("hwnd:" win "|380|275|25|13")
-	}
-	;~ Gdip_SaveBitmapToFile(Bitmaps["dynamic"], "dynamic.png", 100)
 	return
 l_Restart:
 	Reload
@@ -177,7 +160,8 @@ class Clicker {
 		}
 		else if(this.FindImage({area:"89|288|856|420", name:"exchange"}))
 		{
-			if index <= 2
+			;~ OutputDebug % "" index
+			if index = 2 ;~ dont buy tc
 			{
 				index++
 				return
@@ -203,7 +187,7 @@ class Clicker {
 			if this.FindImage({area:"540|308|115|180", name:"xbtn"}) 
 			and !this.FindImage({area:"540|308|115|180", name:"attack"}) 
 			and !this.FindImage({area:"540|308|115|180", name:"tiencong"})
-			and !IsTB
+			;~ and !IsTB
 				return 0 ;~ bad connection
 				;~ OutputDebug % "bad connection!!"
 			for s in ImgSeq 
@@ -242,15 +226,34 @@ class Clicker {
 		Mouses:=[]
 		Menu, Tray, Icon, IconReady.ico
 		ResetState := 0
+		if Stat
+		{
+			FileAppend % "Buy: " StatBuy ", Times: " StatCnt ", Period(mins):" (A_TickCount-StatPer)/(1000*60) "`n", Statistics.txt
+			bm:=GDIP_BitmapFromScreen("hwnd:" Subs[1] "|280|100|55|15")
+			Gdip_SaveBitmapToFile(bm, "End.png", 100)
+			Gdip_DisposeImage(bm)
+			Stat:=0, StatCnt:=0, StatPer:=0, StatBuy:=0
+		}
 	}
-	Start(FnName, period:=175, ImgSeq:=0, MouseSeq:=0) {
-		if(timer)
+	Start(FnName:="NA", period:=175, ImgSeq:=0, MouseSeq:=0) {
+		if timer
 			SetTimer % timer, Delete
-		timer := ObjBindMethod(this, FnName, ImgSeq, MouseSeq) 
+		if (FnName<>"NA")
+			timer := ObjBindMethod(this, FnName, ImgSeq, MouseSeq) 
+		else if this.FindImage2("duc", false)
+			timer := ObjBindMethod(this, "DucTB"), period:=550
+		else if this.FindImage2("vkt", false)
+			timer := ObjBindMethod(this, "VKTFarming"), period:=250 
+		else if this.FindImage2("canquet", false)
+			timer := ObjBindMethod(this, "FnExec", Images, Mouses), period:=250 
+		else if this.FindImage2("dinhphu", false)
+			timer := ObjBindMethod(this, "TimTriKy"), period:=750
+		else if this.FindImage2("vuot_disable", false)
+			timer := ObjBindMethod(this, "ThapTL"), period:=350
+		else 
+			timer := ObjBindMethod(this, "GoldFarming"), period:=250
+		
 		SetTimer % timer, % period
-		IsVKT:=(this.FindImage({area:"212|455|48|58", name:"vkt"})) 
-		IsTB:=(this.FindImage({area:"89|288|856|420", name:"canquet"}))
-		;~ MsgBox % "ThamBao dectect? " IsTB
 		Menu, Tray, Icon, IconExecuting.ico
 		ResetState := 1, ResetSubstate := 1
 	}
@@ -292,10 +295,19 @@ class Clicker {
 	}
 	DucTB( param* )
 	{
-		static state:=count:=tick:=0
+		static state:=0, tick:=0, count:=0
 		if ResetState ;~ reset state once before run
 		{
 			ResetState:=state:=tick:=0
+		}
+		if this.FindImage2("ducthatbai", false)
+		or this.FindImage2("kodubac", false)
+		{
+			if this.FindImage2("tab_kho")
+			{
+				state:=1
+				return
+			}
 		}
 		if state=1
 		{
@@ -305,37 +317,30 @@ class Clicker {
 			;~ if this.FindImage2("nhanhover")
 			if this.FindImage2("nhan")	
 			{
-				count++, state:=2 ;~, tick:=A_TickCount
-				FileAppend % "Open chest at " A_Hour ":" A_Min ":" A_Sec ", total: " count " times`n", Statistic.txt
+				tick:=A_TickCount, count++, state:=2
+				FileAppend % "Open chest at " A_Hour ":" A_Min ":" A_Sec ", total: " count " times`n", Statistics.txt
 				return
 			}
+			
 		}
-		else if state=3
+		if state=2
 		{
-			if this.FindImage2("tab_cuonghoa")
-				state:=4
-		}
-		else if state=4
-		{
- 			if this.FindImage2("duc")
-				tick:=state:=0
-		}
-		else if state=0
-		{
-			if this.FindImage2("ducthatbai", false)
-			or this.FindImage2("kodubac", false)
+			if (A_TickCount-tick > 550) ;~ wait for sync
 			{
-				if this.FindImage2("tab_kho")
+				if this.FindImage2("tab_cuonghoa")
+					return
+				
+				if this.FindImage2("duc", false)
 				{
-					state:=1
+					tick:=state:=0
 					return
 				}
 			}
-			this.DoClick({x:584, y:465})
-			DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 		}
-		else state++
-		
+		if state=0
+		{
+			this.DoClick({x:584, y:465})
+		}
 	}
 	
 	TimTriKy(prm*) {
@@ -344,7 +349,6 @@ class Clicker {
 		;~ danh pham
 		if this.FindImage2("thuongnhan") 
 		or this.FindImage2("phuthuong") 
-		;~ or this.FindImage2("camthi") 
 		;~ farm VH
 		or this.FindImage2("cap6") 
 		or this.FindImage2("cap5") 
@@ -425,10 +429,7 @@ class Clicker {
 			next:=0
 			if( index < Maps.length() ) {
 				if index = 1 
-				{ ;~ pvevent
-					;~ this.FindImage2("closetoppanle", false)
 					this.DoClick({x:907, y:584})
-				} 
 				else if index = 3 ;~ ma nguc
 					this.DoClick({x:623, y:148})
 				else	
@@ -455,7 +456,6 @@ class Clicker {
 		}
 				
 		next:=this.FnExec(Images, Maps[index].pnt)
-		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 	}
 	
 	MultiSubs(prms*)
@@ -464,29 +464,20 @@ class Clicker {
 			this.VKTFarming()
 		else
 			this.GoldFarming()
-		DllCall("psapi.dll\EmptyWorkingSet", "UInt", -1)
 	}
 	
 	GoldFarming()
 	{
-		static state:=0, index:=0, ready:=0, spinstate_1:=0, spinstate_2:=0 ;~, spinning_1:=0, spinning_2:=0
-		
+		static state:=0, index:=0, tick_1:=0, tick_2:=0, s_index_1:=0, s_index_2:=0
 		if ResetState
 		{
-			ResetState:=0, state:=0, index:=0, ready:=0
+			ResetState:=0, state:=0, index:=0, tick_1:=0, tick_2:=0, Stat:=1, StatBuy:=0, StatCnt:=0, StatPer:=A_TickCount
+			bm:=GDIP_BitmapFromScreen("hwnd:" Subs[1] "|280|100|55|15")
+			Gdip_SaveBitmapToFile(bm, "Start.png", 100)
+			Gdip_DisposeImage(bm)
 		}
 		if (state=0)
 		{
-			loop % Subs.length()+1
-			{
-				win:=Subs[A_Index-1]
-				while this.FindImage2("buy",false, win)
-				{
-					this.FindImage2("confirm2,xbtn", true, win) 
-					Sleep 75
-				}
-			}
-			;~ all ok >> check attack status
 			if (index<Subs.length()+1)
 			{
 				loop % Subs.length()+1
@@ -510,23 +501,15 @@ class Clicker {
 		}
 		else if (state=1)
 		{
-			if (index<Subs.length())
+			allin:=0
+			loop % Subs.length()
 			{
-				loop % Subs.length()
-				{
-					if this.FindImage2("inteam", false, Subs[A_Index])
-					{
-						;~ OutputDebug % "Ok, " Subs[A_Index] " ready!"
-						index++
-					}
-					else if this.FindImage2("dynamic_host,host,host2,host3", true, Subs[A_Index]) 
-					{
-						;~ OutputDebug % "" Subs[A_Index] " found host, joined in!!"
-					}
-				}
-				;~ return
-			}		
-			if (index=Subs.length())
+				if this.FindImage2("inteam", false, Subs[A_Index])
+					allin++
+				else if this.FindImage2("host,host2,host3", true, Subs[A_Index])
+					return
+			}
+			if (allin=Subs.length())
 			{
 				state++, index:=0
 			}
@@ -553,7 +536,7 @@ class Clicker {
 				;~ return
 			}
 			if(index = Subs.length()+1) {
-				state:=4, index:=0, spinstate_1:=0, spinstate_2:=0
+				state:=4, index:=0, s_index_1:=0, s_index_2:=0
 			}
 		}
 		else if (state=4)
@@ -564,20 +547,28 @@ class Clicker {
 				loop % Subs.length()+1
 				{
 					win:=Subs[A_Index-1]
-					if this.FindImage2("ql100,dynamic_ql", false, win) ;~ out ot ql
+					if (tick_%A_Index% > 0) 
 					{
-						this.QuayTinhTu(spinstate_%A_Index%, win)
-						if !spinstate_%A_Index%
+						allok++, diff:=A_TickCount-tick_%A_Index%
+						if (diff>50000)
+							tick_%A_Index%:=0
+					}
+					else if this.FindImage2("100ql,100ql2", false, win)
+					{
+						this.QuayTinhTu(s_index_%A_Index%, tick_%A_Index%, win)
+						;~ OutputDebug % "s_spining_" A_Index "=" s_spining_%A_Index%
+						if (s_index_%A_Index% = 0)
 							allok++
 					}
 					else 
 					{
+						this.FindImage2("xbtn", true, win) ;~ double check
 						allok++
 					}
 				}
 			}
 			if (allok=Subs.length()+1)
-				index:=0, state:=0
+				index:=0, state:=0, StatCnt++
 		}
 	}
 	
@@ -648,7 +639,7 @@ class Clicker {
 			}
 			
 			diff := A_TickCount - tick
-			per := 6950 / (Subs.length() + 1)
+			per := 7250 / (Subs.length() + 1)
 			if(diff > per) { 
 				x:=257+index*76, y:=381+index*54, tick := A_TickCount
 				this.DoClick({x:x, y:y}, Subs[index]) ;~ join lane
@@ -659,37 +650,47 @@ class Clicker {
 		}
 	}
 	
-	QuayTinhTu(byref state, win)
-	{	
+	QuayTinhTu(byref state, byref tick, win)
+	{	;~ state
+		;~ 	0: start
+		;~ 	1:
+		;~ 	2:
+		;~ 	3: open > check number of chest
+		;~ 	4: click on buy
+		;~ 	5: input chests to buy then confirm
+		;~ 	6:
+		;~ 	7:
+		;~ 	8:
+		;~ 	9: click on selfopen chest
+		;~ 	10: confirm open then close
+		;~ OutputDebug % "QuayTinhTu:: >> " win
 		if !win
 			win:=Main
+		
 		if state=0
 		{
 			if this.FindImage2("tinhtu",true, win)
 				state++
 		}
-		else if state=1 ;~ spin open
+		else if state=3 ;~ spin open
 		{
-			Loop {
-				OutputDebug % "be patient... opening..."
-				Sleep 25
-			} Until this.FindImage2("buy", false, win)
-			
 			if this.FindImage2("zeroleft", false, win)
 			{
 				if this.FindImage2("buy", true, win)
+				{
 					state++
-			} 
-			else if this.FindImage2("selfopen", true, win)
-			{
-				state:=7
+				}
 			}
-			else if this.FindImage2("xbtn", true, win)
+			else if this.FindImage2("selfopen", true, win) ;~ have some chests, just open it
+			{
+				state:=10
+			}
+			else if this.FindImage2("xbtn", true, win) ;~ spinning, close it
 			{
 				state:=0
 			}
 		}
-		else if state=2 ;~ buy
+		else if state=4 ;~ buy
 		{
 			if this.FindImage2("confirm2", false, win)
 			{
@@ -697,24 +698,33 @@ class Clicker {
 				state++ ;~ move next state to avoid doubleclick-like
 			}
 		}
-		else if state=3
+		else if state=5
 		{
 			ControlSend,ahk_parent,{Raw}0, ahk_id %win%
 			if this.FindImage2("confirm2", true, win)
+			{
 				state++
+				if (win=Subs[1])
+					StatBuy++
+			}
 		}
-		else if state=6 ;~ open chest
+		else if state=9 ;~ open chest
 		{
 			if this.FindImage2("selfopen", true, win)
 				state++
 		}
-		else if state=7
+		else if state=10
 		{
 			if this.FindImage2("confirm2", true, win)
 				if this.FindImage2("xbtn", true, win)
-					state:=0
+					tick:=A_TickCount, state:=0
 		}
-		else state++
+		else
+		{
+			state++
+		}
+		
+		return state
 	}
 
 	
@@ -821,27 +831,20 @@ class Clicker {
 			res := Gdip_ImageSearch(bmpArea, Bitmaps[A_LoopField], list)
 			if res > 0 
 			{
-				StringSplit, C, list, `,
 				if click
 				{
+					StringSplit, C, list, `,
 					x:=C1, y:=75+C2-MouseOffset
 					if names contains "host,host2,host3"
 					{
 						x:=C1+200
 					}
-					else IfEqual, A_LoopField, xbtn
-					{
-						x:=855, y:=142
-						OutputDebug % "xbtn >> " x "," y
-					}
 					this.DoClick({x:x,y:y}, win)
 				}
-				goto EndFI2
+				goto EndFnc
 			}
-			;~ else 
-				;~ OutputDebug % "" A_LoopField " not found!!"
 		}	
-		EndFI2:
+		EndFnc:
 		Gdip_DisposeImage(bmpArea)
 		return (res > 0)
 	}
@@ -851,7 +854,7 @@ class Clicker {
 		{
 			name:=Maps[A_Index].name
 			if(this.FindImage({area:"440|705|120|22", name:name})) {
-				if (name = "gcd2" or name = "hhuy") {
+				if (name = "gcd2" or name = "hhuy" or name = "duongco") {
 					;GoPrev:=true
 					return 0
 				}
@@ -874,7 +877,7 @@ LoadBitmaps()
 		StringSplit, C, % Trim(S2), % A_Space
 		;~ OutputDebug % "name: " name " x: " C1 ", y:" C2 ", w:" C3 ", h:" C4
 		Bitmaps[name] := Gdip_CloneBitmapArea(texture, C1, C2, C3, C4)
-		;~ Gdip_SaveBitmapToFile(Bitmaps[name], "images\" name ".png", 100)
+		;~ Gdip_SaveBitmapToFile(Bitmaps[name], "raw\" name ".png", 100)
 	}
 	Gdip_DisposeImage(texture)
 }
@@ -887,16 +890,14 @@ SetUpGameHWND() {
 		loop % all
 		{
 			Subs.Push(all%A_Index%)
-			WinMove, % "ahk_id " all%A_Index%,, -5, 0, 1010, 678
+			WinMove, % "ahk_id " all%A_Index%,, -5, 321, 1010, 678
 			OutputDebug % "" A_Index ": " all%A_Index%
 		}
 	}
 	
 	if( Subs.length() = 1) {
 		Main:=Subs.Pop()
-		;~ ;MsgBox % "Main: " Main
-	} else MsgBox % "Found " Subs.length() " game window.`nMain isn't setup yet!" 
-		
+	}
 	return
 }
 SetUpMap() {
@@ -978,20 +979,7 @@ SetUpImage() {
 	Images.Push({area:"89|288|856|420", name:"thoatTB", pnt:{x:783, y:543}})
 	return
 }
-SetUpVKT() {
-	Searches:=[]
-	;~ qd
-	Searches.Push({area:"413|362|64|26", p:{x:635, y:270}})
-	Searches.Push({area:"413|429|64|26", p:{x:635, y:335}})
-	Searches.Push({area:"413|494|64|26", p:{x:635, y:402}})
-	Searches.Push({area:"413|557|64|26", p:{x:635, y:465}})
-	;~ vkt
-	Searches.Push({area:"367|334|65|26", p:{x:590, y:242}})
-	Searches.Push({area:"367|401|65|26", p:{x:590, y:307}})
-	Searches.Push({area:"367|466|65|26", p:{x:590, y:374}})
-	Searches.Push({area:"367|529|65|26", p:{x:590, y:437}})
-	return
-}
+
 SetUpNgaoDu() {
 	;~ NDCuongChe:=[{x:359, y:446},{x:442, y:449},{x:516, y:444},{x:578, y:438},{x:658, y:445},{x:731, y:436}]
 	;~ NDSteps:=[1,6,6,5,6,5,3,2,6,2,4,2,6,2,5,5,6,1,4,3,1,4,4,1]
@@ -1005,7 +993,7 @@ ToggleSH(turnOn){
 	if turnOn
 	{
 		Sleep 250
-		ControlSetText, 1.0, 10, ahk_id %ce%
+		ControlSetText, 1.0, 50, ahk_id %ce%
 		ControlClick, Apply, ahk_id %ce%,,,, NA
 	}
 	return
